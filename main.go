@@ -3,9 +3,14 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+
+	"stowaway/cmd/install"
+	"stowaway/internal/profile"
 )
 
 const version = "0.4.0"
@@ -15,6 +20,7 @@ const usage = `stowaway keeps a repository of dotfiles and links them into your 
 usage: stowaway <command> [flags]
 
 commands:
+  install     link the entries of a profile into your home directory
   version     print the version
   help        print this text
 
@@ -43,7 +49,7 @@ func run(args []string, out, errOut io.Writer) error {
 		fmt.Fprint(errOut, usage)
 		return exitError{2}
 	}
-	command := args[0]
+	command, rest := args[0], args[1:]
 	switch command {
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
@@ -52,6 +58,14 @@ func run(args []string, out, errOut io.Writer) error {
 		fmt.Fprintf(out, "stowaway %s\n", version)
 		return nil
 	}
-	fmt.Fprintf(errOut, "stowaway: unknown command %q\n\n%s", command, usage)
-	return exitError{2}
-}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	fs := flag.NewFlagSet(command, flag.ContinueOnError)
