@@ -69,3 +69,18 @@ func run(args []string, out, errOut io.Writer) error {
 	}
 
 	fs := flag.NewFlagSet(command, flag.ContinueOnError)
+	fs.SetOutput(errOut)
+	fs.Usage = func() { fmt.Fprintf(errOut, "usage: stowaway %s [flags]\n", command) }
+
+	switch command {
+	case "install":
+		opts := install.ParseFlags(fs)
+		if err := parse(fs, rest); err != nil {
+			return err
+		}
+		repo, err := repoFor(cwd)
+		if err != nil {
+			return err
+		}
+		_, err = install.Run(home, repo, *opts, out, errOut)
+		return err
