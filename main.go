@@ -84,3 +84,17 @@ func run(args []string, out, errOut io.Writer) error {
 		}
 		_, err = install.Run(home, repo, *opts, out, errOut)
 		return err
+	}
+	fmt.Fprintf(errOut, "stowaway: unknown command %q\n\n%s", command, usage)
+	return exitError{2}
+}
+
+func parse(fs *flag.FlagSet, args []string) error {
+	if err := fs.Parse(args); err != nil {
+		return exitError{2}
+	}
+	if fs.NArg() > 0 {
+		return fmt.Errorf("unexpected argument %q", fs.Arg(0))
+	}
+	return nil
+}
