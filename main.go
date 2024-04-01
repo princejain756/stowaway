@@ -98,3 +98,16 @@ func parse(fs *flag.FlagSet, args []string) error {
 	}
 	return nil
 }
+
+// repoFor finds the repository holding the working directory, preferring the
+// STOWAWAY_REPO override when it is set.
+func repoFor(cwd string) (string, error) {
+	if override := os.Getenv("STOWAWAY_REPO"); override != "" {
+		abs, err := filepath.Abs(override)
+		if err != nil {
+			return "", err
+		}
+		return abs, nil
+	}
+	return profile.Root(cwd)
+}
