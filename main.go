@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"stowaway/cmd/install"
+	"stowaway/cmd/uninstall"
 	"stowaway/internal/profile"
 )
 
@@ -21,6 +22,7 @@ usage: stowaway <command> [flags]
 
 commands:
   install     link the entries of a profile into your home directory
+  uninstall   remove the links a profile installed
   version     print the version
   help        print this text
 
@@ -84,6 +86,16 @@ func run(args []string, out, errOut io.Writer) error {
 		}
 		_, err = install.Run(home, repo, *opts, out, errOut)
 		return err
+	case "uninstall":
+		opts := uninstall.ParseFlags(fs)
+		if err := parse(fs, rest); err != nil {
+			return err
+		}
+		repo, err := repoFor(cwd)
+		if err != nil {
+			return err
+		}
+		return uninstall.Run(home, repo, *opts, out, errOut)
 	}
 	fmt.Fprintf(errOut, "stowaway: unknown command %q\n\n%s", command, usage)
 	return exitError{2}
