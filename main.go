@@ -11,6 +11,7 @@ import (
 
 	"stowaway/cmd/diff"
 	"stowaway/cmd/install"
+	"stowaway/cmd/list"
 	"stowaway/cmd/uninstall"
 	"stowaway/internal/profile"
 )
@@ -25,6 +26,7 @@ commands:
   install     link the entries of a profile into your home directory
   uninstall   remove the links a profile installed
   diff        report entries that drifted from the repository
+  list        print the profiles in the repository
   version     print the version
   help        print this text
 
@@ -115,6 +117,23 @@ func run(args []string, out, errOut io.Writer) error {
 			return exitError{1}
 		}
 		return nil
+	case "list":
+		list.ParseFlags(fs)
+		if err := parse(fs, rest); err != nil {
+			return err
+		}
+		repo, err := repoFor(cwd)
+		if err != nil {
+			return err
+		}
+		count, err := list.Run(repo, out)
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			fmt.Fprintln(errOut, "no profiles defined")
+		}
+		return nil
 	}
 	fmt.Fprintf(errOut, "stowaway: unknown command %q\n\n%s", command, usage)
 	return exitError{2}
@@ -133,12 +152,3 @@ func parse(fs *flag.FlagSet, args []string) error {
 // repoFor finds the repository holding the working directory, preferring the
 // STOWAWAY_REPO override when it is set.
 func repoFor(cwd string) (string, error) {
-	if override := os.Getenv("STOWAWAY_REPO"); override != "" {
-		abs, err := filepath.Abs(override)
-		if err != nil {
-			return "", err
-		}
-		return abs, nil
-	}
-	return profile.Root(cwd)
-}
